@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'views/screens/main_shell.dart';
 
 void main() {
   runApp(const ScholarSyncApp());
@@ -49,9 +50,7 @@ class ScholarSyncApp extends StatelessWidget {
           themeMode: ThemeMode.system,
 
           // We'll add routes here as we create each screen
-          home: const Scaffold(
-            body: Center(child: Text('ScholarSync is alive 🎉')),
-          ),
+          home: const MainShell(),
         );
       },
     );
