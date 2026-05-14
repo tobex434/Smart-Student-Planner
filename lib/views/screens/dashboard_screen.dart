@@ -1,27 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smart_student_planner/views/screens/profile_screen.dart';
+import '../../controllers/task_controller.dart';
+import '../../models/task.dart';
 import 'new_task_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
-  // toggle to check both states of the dashboard, when set to true it shows the active state with tasks, when set to false it shows the empty state with no tasks
-  static const bool _hasTasks = true;
-
   @override
   Widget build(BuildContext context) {
+    // watch means rebuild whenever TaskController changes 
+    final taskCtrl = context.watch<TaskController>();
+    final tasks = taskCtrl.tasks;
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: _buildAppBar(context),
-      // this switches between the empty and active states based on _hasTasks
-      body: _hasTasks ? _buildActiveState(context) : _buildEmptyState(context),
-      // FAB only shows in active state
-      floatingActionButton: _hasTasks ? _buildFAB(context) : null,
+      // if statement replaces the hardcoded _hasTasks bool
+      body: tasks.isEmpty
+          ? _buildEmptyState(context)
+          : _buildActiveState(context, taskCtrl),
+      floatingActionButton: tasks.isEmpty ? null : _buildFAB(context),
     );
   }
 
-  // AppBar: logo 
+  // AppBar: logo
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -217,7 +222,23 @@ class DashboardScreen extends StatelessWidget {
   // ACTIVE STATE
   // Shown when user has tasks
 
-  Widget _buildActiveState(BuildContext context) {
+  Widget _buildActiveState(BuildContext context, TaskController taskCtrl) {
+    // ── Priority Focus — first high priority incomplete task ──
+    // replaces hardcoded cards
+    final highPriority = taskCtrl.tasks
+        .where((t) => t.priority == 'High' && !t.isComplete)
+        .toList();
+
+    final upcoming = taskCtrl.tasks
+        .where(
+          (t) =>
+              t.deadline != null &&
+              t.deadline!.isAfter(DateTime.now()) &&
+              !t.isComplete,
+        )
+        .take(2)
+        .toList();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 18),
       child: Column(
@@ -256,63 +277,57 @@ class DashboardScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // progress banner card
-          _buildProgressCard(context),
+          _buildProgressCard(context, taskCtrl),
 
           const SizedBox(height: 24),
 
-          // priority focus section
           _buildSectionHeader(context, 'Priority Focus'),
 
           const SizedBox(height: 12),
 
-          // urgent task — full width card
-          _buildUrgentTaskCard(context),
-
-          const SizedBox(height: 12),
-
-          // two smaller task cards side by side
-          Row(
-            children: [
-              Expanded(
-                child: _buildSmallTaskCard(
-                  context,
-                  icon: Icons.science_outlined,
-                  iconBg: const Color(0xFFE8F5E9),
-                  iconColor: const Color(0xFF2E7D32),
-                  title: 'Bio Laboratory',
-                  subtitle: 'Write report',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildSmallTaskCard(
-                  context,
-                  icon: Icons.translate_outlined,
-                  iconBg: const Color(0xFFEDE7F6),
-                  iconColor: const Color(0xFF512DA8),
-                  title: 'Linguistic Prep',
-                  subtitle: 'Essay Quiz',
-                ),
-              ),
-            ],
-          ),
+          highPriority.isEmpty
+              ? Text(
+                  'No urgent tasks right now.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                )
+              : _buildUrgentTaskCard(context, highPriority.first),
 
           const SizedBox(height: 24),
 
-          // upcoming tasks section
           _buildSectionHeader(context, 'Upcoming tasks'),
 
           const SizedBox(height: 12),
 
-          // upcoming task row
-          _buildUpcomingTaskCard(
-            context,
-            month: 'MAY',
-            day: '15',
-            title: 'Modern History Essay',
-            subtitle: 'Still in drafting stage',
-            progress: 0.84,
-          ),
+          upcoming.isEmpty
+              ? Text(
+                  'No upcoming tasks.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                )
+              : Column(
+                  children: upcoming
+                      .map(
+                        (t) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _buildUpcomingTaskCard(
+                            context,
+                            month: _monthName(t.deadline!.month),
+                            day: t.deadline!.day.toString(),
+                            title: t.title,
+                            subtitle: t.description,
+                            progress: taskCtrl.totalCount == 0
+                                ? 0.0
+                                : taskCtrl.completedCount / taskCtrl.totalCount,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
 
           const SizedBox(height: 80),
         ],
@@ -348,8 +363,14 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  // Blue progress banner: "You are killing it" + circular %
-  Widget _buildProgressCard(BuildContext context) {
+  // ── progress card — real completion percentage ──
+  Widget _buildProgressCard(BuildContext context, TaskController taskCtrl) {
+    // avoid dividing by zero if no tasks
+    final total = taskCtrl.totalCount;
+    final completed = taskCtrl.completedCount;
+    final percent = total == 0 ? 0.0 : completed / total;
+    final percentInt = (percent * 100).toInt();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -364,9 +385,13 @@ class DashboardScreen extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'You are killing it',
-                style: TextStyle(
+              Text(
+                percentInt >= 80
+                    ? 'You are killing it'
+                    : percentInt >= 50
+                    ? 'Keep it up!'
+                    : 'Let\'s get started!',
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -374,7 +399,7 @@ class DashboardScreen extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '84% of weekly goals met.',
+                '$percentInt% of weekly goals met.',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.85),
                   fontSize: 13,
@@ -397,15 +422,14 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 // progress ring
                 CircularProgressIndicator(
-                  value: 0.84,
+                  value: percent,
                   strokeWidth: 5,
                   color: Colors.white,
                   backgroundColor: Colors.transparent,
                 ),
-                // percentage text
-                const Text(
-                  '84%',
-                  style: TextStyle(
+                Text(
+                  '$percentInt%',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -419,8 +443,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  // ── Urgent task card: full width with due badge ──
-  Widget _buildUrgentTaskCard(BuildContext context) {
+  Widget _buildUrgentTaskCard(BuildContext context, Task task) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -455,7 +478,7 @@ class DashboardScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Advanced Calculus III',
+                  task.title,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
@@ -464,49 +487,52 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Submit Final Problem',
+                  task.description,
                   style: TextStyle(
                     fontSize: 12,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
 
           // due badge
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
+          if (task.deadline != null)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Due',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
                 ),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Due',
+                const SizedBox(height: 4),
+                Text(
+                  TimeOfDay.fromDateTime(task.deadline!).format(context),
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.error,
                   ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '11:59 PM',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );
@@ -566,7 +592,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  // Upcoming task card: date | title | progress ring 
+  // Upcoming task card: date | title | progress ring
   Widget _buildUpcomingTaskCard(
     BuildContext context, {
     required String month,
@@ -673,7 +699,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  //  FAB: add new task 
+  //  FAB: add new task
   Widget _buildFAB(BuildContext context) {
     return FloatingActionButton(
       onPressed: () => Navigator.push(
@@ -685,7 +711,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  //  Tip card: green icon | title | body 
+  //  Tip card: green icon | title | body
   Widget _buildTipCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -740,5 +766,24 @@ class DashboardScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // ── month name helper ──
+  String _monthName(int month) {
+    const months = [
+      'JAN',
+      'FEB',
+      'MAR',
+      'APR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AUG',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DEC',
+    ];
+    return months[month - 1];
   }
 }
