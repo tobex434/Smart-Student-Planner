@@ -5,10 +5,9 @@ import 'task.dart';
 /// This class handles all local SQLite database operations for the app.
 /// It follows the Singleton pattern to ensure only one database connection exists.
 class DatabaseHelper {
-  
   /// The single, global instance of DatabaseHelper.
   static final DatabaseHelper instance = DatabaseHelper._init();
-  
+
   /// The internal database object, initially null.
   static Database? _database;
 
@@ -28,11 +27,7 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, fileName);
 
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _createDB,
-    );
+    return await openDatabase(path, version: 1, onCreate: _createDB);
   }
 
   /// Runs the first time the app is launched to build the table structure.
@@ -77,13 +72,25 @@ class DatabaseHelper {
   Future<List<Task>> getTasksDueToday() async {
     final db = await database;
     final today = DateTime.now();
-    final datePrefix = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    final datePrefix =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
     final rows = await db.query(
       'tasks',
       where: 'deadline LIKE ? AND isComplete = 0',
       whereArgs: ['$datePrefix%'],
       orderBy: 'deadline ASC',
+    );
+    return rows.map((row) => Task.fromMap(row)).toList();
+  }
+
+  // returns only completed tasks
+  Future<List<Task>> getCompletedTasks() async {
+    final db = await database;
+    final rows = await db.query(
+      'tasks',
+      where: 'isComplete = 1',
+      orderBy: 'createdAt DESC',
     );
     return rows.map((row) => Task.fromMap(row)).toList();
   }
@@ -129,11 +136,7 @@ class DatabaseHelper {
   /// Permanently removes a task from the database by ID.
   Future<int> deleteTask(int id) async {
     final db = await database;
-    return await db.delete(
-      'tasks',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('tasks', where: 'id = ?', whereArgs: [id]);
   }
 
   // ANALYTICS AND UTILITIES
