@@ -1,0 +1,153 @@
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import 'task.dart';
+
+/// This class handles all local SQLite database operations for the app.
+/// It follows the Singleton pattern to ensure only one database connection exists.
+class DatabaseHelper {
+  
+  /// The single, global instance of DatabaseHelper.
+  static final DatabaseHelper instance = DatabaseHelper._init();
+  
+  /// The internal database object, initially null.
+  static Database? _database;
+
+  /// Private constructor ensures no other instances are created elsewhere.
+  DatabaseHelper._init();
+
+  /// Getter that returns the active database connection.
+  /// If the database isn't open yet, it triggers the initialization.
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDB('scholarsync.db');
+    return _database!;
+  }
+
+  /// Finds the correct file path for the database and opens it.
+  Future<Database> _initDB(String fileName) async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, fileName);
+
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: _createDB,
+    );
+  }
+
+  /// Runs the first time the app is launched to build the table structure.
+  Future<void> _createDB(Database db, int version) async {
+    await db.execute('''
+      CREATE TABLE tasks (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        title       TEXT    NOT NULL,
+        description TEXT    NOT NULL,
+        priority    TEXT    NOT NULL,
+        deadline    TEXT,
+        modules     TEXT    NOT NULL,
+        reminders   INTEGER NOT NULL DEFAULT 1,
+        isComplete  INTEGER NOT NULL DEFAULT 0,
+        createdAt   TEXT    NOT NULL
+      )
+    ''');
+  }
+
+  // CREATE OPERATIONS
+
+  /// Converts a Task object to a Map and saves it into the 'tasks' table.
+  Future<int> insertTask(Task task) async {
+    final db = await database;
+    return await db.insert(
+      'tasks',
+      task.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  // READ OPERATIONS
+
+  /// Fetches every task from the table and converts the raw data back into Task objects.
+  Future<List<Task>> getAllTasks() async {
+    final db = await database;
+    final rows = await db.query('tasks', orderBy: 'createdAt DESC');
+    return rows.map((row) => Task.fromMap(row)).toList();
+  }
+
+  /// Filters for incomplete tasks where the deadline matches today's date.
+  Future<List<Task>> getTasksDueToday() async {
+    final db = await database;
+    final today = DateTime.now();
+    final datePrefix = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+    final rows = await db.query(
+      'tasks',
+      where: 'deadline LIKE ? AND isComplete = 0',
+      whereArgs: ['$datePrefix%'],
+      orderBy: 'deadline ASC',
+    );
+    return rows.map((row) => Task.fromMap(row)).toList();
+  }
+
+  /// Searches for tasks by checking if the title or description contains the search term.
+  Future<List<Task>> searchTasks(String keyword) async {
+    final db = await database;
+    final rows = await db.query(
+      'tasks',
+      where: 'title LIKE ? OR description LIKE ?',
+      whereArgs: ['%$keyword%', '%$keyword%'],
+      orderBy: 'createdAt DESC',
+    );
+    return rows.map((row) => Task.fromMap(row)).toList();
+  }
+
+  // UPDATE OPERATIONS
+
+  /// Updates an existing task record using its unique ID as the reference.
+  Future<int> updateTask(Task task) async {
+    final db = await database;
+    return await db.update(
+      'tasks',
+      task.toMap(),
+      where: 'id = ?',
+      whereArgs: [task.id],
+    );
+  }
+
+  /// Efficiently updates only the completion status of a task.
+  Future<int> toggleComplete(int id, bool isComplete) async {
+    final db = await database;
+    return await db.update(
+      'tasks',
+      {'isComplete': isComplete ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // DELETE OPERATIONS
+
+  /// Permanently removes a task from the database by ID.
+  Future<int> deleteTask(int id) async {
+    final db = await database;
+    return await db.delete(
+      'tasks',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // ANALYTICS AND UTILITIES
+
+  /// Returns the total count of all tasks for use in dashboard widgets.
+  Future<int> getTaskCount() async {
+    final db = await database;
+    final result = await db.rawQuery('SELECT COUNT(*) as count FROM tasks');
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  /// Closes the database connection to free up resources when the app is terminated.
+  Future<void> close() async {
+    final db = await database;
+    await db.close();
+  }
+}
