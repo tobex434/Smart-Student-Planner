@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/auth_controller.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -8,13 +10,19 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // ── hardcoded for now — AuthController replaces in Phase 3 ──
-  final _nameController =
-      TextEditingController(text: 'Bankole Tobi Odumosu');
-  final _emailController =
-      TextEditingController(text: 'banky.Odumobi@panatlantic.edu');
-  final _courseController =
-      TextEditingController(text: 'Botany & Fisheries');
+  late TextEditingController _nameController;
+  late TextEditingController _emailController;
+  late TextEditingController _courseController;
+
+  @override
+  void initState() {
+    super.initState();
+    // pre-fill from saved prefs
+    final authCtrl = context.read<AuthController>();
+    _nameController = TextEditingController(text: authCtrl.userName);
+    _emailController = TextEditingController(text: authCtrl.userEmail);
+    _courseController = TextEditingController(text: authCtrl.userCourse);
+  }
 
   @override
   void dispose() {
@@ -60,7 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── AppBar: back arrow | Profile title | search ──
+  // AppBar: back arrow 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -262,14 +270,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  //  Save changes — full width primary pill
+  //  Save changes full width primary pill
   Widget _buildSaveButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       height: 54,
       child: ElevatedButton.icon(
         onPressed: () {
-          // TODO: AuthController.saveProfile()
+          context.read<AuthController>().saveProfile(
+            name: _nameController.text.trim(),
+            email: _emailController.text.trim(),
+            course: _courseController.text.trim(),
+          );
+          // show confirmation
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Profile saved'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
         },
         icon: const Icon(Icons.save_outlined, color: Colors.white),
         label: const Text(
@@ -291,7 +314,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  //  Change password — ghost pill
+  //  Change password 
   Widget _buildChangePasswordButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,

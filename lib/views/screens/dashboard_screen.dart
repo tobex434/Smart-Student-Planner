@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smart_student_planner/views/screens/profile_screen.dart';
 import '../../controllers/task_controller.dart';
+import '../../controllers/auth_controller.dart';
 import '../../models/task.dart';
 import 'new_task_screen.dart';
 
@@ -14,14 +15,18 @@ class DashboardScreen extends StatelessWidget {
     // watch means rebuild whenever TaskController changes 
     final taskCtrl = context.watch<TaskController>();
     final tasks = taskCtrl.tasks;
+    final authCtrl = context.watch<AuthController>();
+    final name = authCtrl.userName.isNotEmpty
+        ? authCtrl.userName.split(' ').first
+        : 'Student';
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: _buildAppBar(context),
       // if statement replaces the hardcoded _hasTasks bool
       body: tasks.isEmpty
-          ? _buildEmptyState(context)
-          : _buildActiveState(context, taskCtrl),
+          ? _buildEmptyState(context, name)
+          : _buildActiveState(context, taskCtrl, name),
       floatingActionButton: tasks.isEmpty ? null : _buildFAB(context),
     );
   }
@@ -97,7 +102,7 @@ class DashboardScreen extends StatelessWidget {
 
   // empty state
   // Shown when user has no tasks
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState(BuildContext context, String name) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 18),
       child: Column(
@@ -112,11 +117,11 @@ class DashboardScreen extends StatelessWidget {
                 fontSize: 24,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              children: const [
-                TextSpan(text: 'Welcome back! '),
+              children: [
+                const TextSpan(text: 'Welcome back! '),
                 TextSpan(
-                  text: 'Tobi',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  text: name,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -222,8 +227,12 @@ class DashboardScreen extends StatelessWidget {
   // ACTIVE STATE
   // Shown when user has tasks
 
-  Widget _buildActiveState(BuildContext context, TaskController taskCtrl) {
-    // ── Priority Focus — first high priority incomplete task ──
+  Widget _buildActiveState(
+    BuildContext context,
+    TaskController taskCtrl,
+    String name,
+  ) {
+    // Priority Focus first high priority incomplete task 
     // replaces hardcoded cards
     final highPriority = taskCtrl.tasks
         .where((t) => t.priority == 'High' && !t.isComplete)
@@ -253,11 +262,11 @@ class DashboardScreen extends StatelessWidget {
                 fontSize: 24,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              children: const [
-                TextSpan(text: 'Welcome back! '),
+              children: [
+                const TextSpan(text: 'Welcome back! '),
                 TextSpan(
-                  text: 'Tobi',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  text: name,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -335,7 +344,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  // ── Section header: title | "View all" link ──
+  // Section header: title 
   Widget _buildSectionHeader(BuildContext context, String title) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -363,7 +372,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  // ── progress card — real completion percentage ──
+  // progress card real completion percentage 
   Widget _buildProgressCard(BuildContext context, TaskController taskCtrl) {
     // avoid dividing by zero if no tasks
     final total = taskCtrl.totalCount;
@@ -768,7 +777,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  // ── month name helper ──
+  // month name helper 
   String _monthName(int month) {
     const months = [
       'JAN',

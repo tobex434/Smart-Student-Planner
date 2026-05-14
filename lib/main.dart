@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dynamic_color/dynamic_color.dart';
-import 'views/screens/main_shell.dart';
 import 'controllers/task_controller.dart';
+import 'controllers/auth_controller.dart';
+import 'views/screens/main_shell.dart';
 
 void main() async {
   // ensures Flutter is ready before async work
   WidgetsFlutterBinding.ensureInitialized();
 
-  // load tasks from SQLite before the app renders
+  // ── load both controllers before app renders ──
   final taskController = TaskController();
+  final authController = AuthController();
   await taskController.loadTasks();
+  await authController.loadFromPrefs();
 
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider.value(value: taskController)],
+      providers: [
+        ChangeNotifierProvider.value(value: taskController),
+        ChangeNotifierProvider.value(value: authController),
+      ],
       child: const ScholarSyncApp(),
     ),
   );

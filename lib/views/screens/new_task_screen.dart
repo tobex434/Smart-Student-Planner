@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/task_controller.dart';
+import '../../models/task.dart';
 
 class NewTaskScreen extends StatefulWidget {
-  const NewTaskScreen({super.key});
+  // null = add mode, not null = edit mode
+  final Task? existingTask;
+  const NewTaskScreen({super.key, this.existingTask});
 
   @override
   State<NewTaskScreen> createState() => _NewTaskScreenState();
@@ -9,8 +14,8 @@ class NewTaskScreen extends StatefulWidget {
 
 class _NewTaskScreenState extends State<NewTaskScreen> {
   // ── form controllers ──
-  final _titleController = TextEditingController();
-  final _descController = TextEditingController();
+  late TextEditingController _titleController;
+  late TextEditingController _descController;
 
   // ── priority: 0=Low, 1=Medium, 2=High ──
   int _selectedPriority = 1;
@@ -20,10 +25,32 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
   TimeOfDay _selectedTime = const TimeOfDay(hour: 23, minute: 59);
 
   // ── module chips — dynamic list, TaskController replaces later ──
-  final List<String> _modules = ['History', 'Thesis', 'Calculus', 'Python'];
+  List<String> _modules = ['History', 'Thesis', 'Calculus', 'Python'];
 
   // ── reminders toggle ──
   bool _remindersOn = true;
+
+  @override
+  void initState() {
+    super.initState();
+    final task = widget.existingTask;
+    if (task != null) {
+      // edit mode — pre-fill all fields
+      _titleController = TextEditingController(text: task.title);
+      _descController = TextEditingController(text: task.description);
+      _selectedPriority = ['Low', 'Medium', 'High'].indexOf(task.priority);
+      _selectedDate = task.deadline ?? DateTime.now();
+      _selectedTime = task.deadline != null
+          ? TimeOfDay.fromDateTime(task.deadline!)
+          : const TimeOfDay(hour: 23, minute: 59);
+      _modules = List.from(task.modules);
+      _remindersOn = task.reminders;
+    } else {
+      // add mode — empty fields
+      _titleController = TextEditingController();
+      _descController = TextEditingController();
+    }
+  }
 
   @override
   void dispose() {
@@ -152,7 +179,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
 
           // title
           Text(
-            'New Task',
+            widget.existingTask != null ? 'Edit Task' : 'New Task',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -163,7 +190,46 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
           // save text button
           GestureDetector(
             onTap: () {
-              // TODO: TaskController.addTask()
+              if (_titleController.text.trim().isEmpty) return;
+              final taskCtrl = context.read<TaskController>();
+
+              if (widget.existingTask != null) {
+                // edit mode
+                taskCtrl.updateTask(
+                  id: widget.existingTask!.id!,
+                  title: _titleController.text.trim(),
+                  description: _descController.text.trim(),
+                  priority: ['Low', 'Medium', 'High'][_selectedPriority],
+                  deadline: DateTime(
+                    _selectedDate.year,
+                    _selectedDate.month,
+                    _selectedDate.day,
+                    _selectedTime.hour,
+                    _selectedTime.minute,
+                  ),
+                  modules: _modules,
+                  reminders: _remindersOn,
+                  isComplete: widget.existingTask!.isComplete,
+                  createdAt: widget.existingTask!.createdAt,
+                );
+              } else {
+                // add mode
+                taskCtrl.addTask(
+                  title: _titleController.text.trim(),
+                  description: _descController.text.trim(),
+                  priority: ['Low', 'Medium', 'High'][_selectedPriority],
+                  deadline: DateTime(
+                    _selectedDate.year,
+                    _selectedDate.month,
+                    _selectedDate.day,
+                    _selectedTime.hour,
+                    _selectedTime.minute,
+                  ),
+                  modules: _modules,
+                  reminders: _remindersOn,
+                );
+              }
+              Navigator.pop(context);
             },
             child: Row(
               children: [
@@ -615,21 +681,25 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
           Switch(
             value: _remindersOn,
             onChanged: (val) => setState(() => _remindersOn = val),
-            activeColor: Theme.of(context).colorScheme.primary,
+            activeThumbColor: Theme.of(context).colorScheme.primary,
           ),
         ],
       ),
     );
   }
 
-  // ── Bottom actions: Delete Task | Save ──
+  // Bottom actions: Delete Task 
   Widget _buildBottomActions(BuildContext context) {
     return Row(
       children: [
         // delete task — red text
         GestureDetector(
           onTap: () {
-            // TODO: TaskController.deleteTask()
+            if (widget.existingTask != null) {
+              context.read<TaskController>().deleteTask(
+                widget.existingTask!.id!,
+              );
+            }
             Navigator.pop(context);
           },
           child: Text(
@@ -644,12 +714,50 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
 
         const Spacer(),
 
-        // save button — blue pill
+        // save button blue pill
         SizedBox(
           height: 48,
           child: ElevatedButton(
             onPressed: () {
-              // TODO: TaskController.addTask()
+              if (_titleController.text.trim().isEmpty) return;
+              final taskCtrl = context.read<TaskController>();
+
+              if (widget.existingTask != null) {
+                // edit mode
+                taskCtrl.updateTask(
+                  id: widget.existingTask!.id!,
+                  title: _titleController.text.trim(),
+                  description: _descController.text.trim(),
+                  priority: ['Low', 'Medium', 'High'][_selectedPriority],
+                  deadline: DateTime(
+                    _selectedDate.year,
+                    _selectedDate.month,
+                    _selectedDate.day,
+                    _selectedTime.hour,
+                    _selectedTime.minute,
+                  ),
+                  modules: _modules,
+                  reminders: _remindersOn,
+                  isComplete: widget.existingTask!.isComplete,
+                  createdAt: widget.existingTask!.createdAt,
+                );
+              } else {
+                // add mode
+                taskCtrl.addTask(
+                  title: _titleController.text.trim(),
+                  description: _descController.text.trim(),
+                  priority: ['Low', 'Medium', 'High'][_selectedPriority],
+                  deadline: DateTime(
+                    _selectedDate.year,
+                    _selectedDate.month,
+                    _selectedDate.day,
+                    _selectedTime.hour,
+                    _selectedTime.minute,
+                  ),
+                  modules: _modules,
+                  reminders: _remindersOn,
+                );
+              }
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
@@ -674,7 +782,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
     );
   }
 
-  // ── helper: month name from int ──
+  // helper: month name from int 
   String _monthName(int month) {
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -684,7 +792,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
   }
 }
 
-// ── Dashed border chip for the add module button ──
+// Dashed border chip for the add module button 
 class DashedBorderChip extends StatelessWidget {
   final BuildContext context;
   const DashedBorderChip({super.key, required this.context});
@@ -696,8 +804,6 @@ class DashedBorderChip extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border.all(
           color: Theme.of(context).colorScheme.primary,
-          // Flutter doesn't have native dashed borders
-          // we simulate with a low opacity outline
           style: BorderStyle.solid,
         ),
         borderRadius: BorderRadius.circular(20),

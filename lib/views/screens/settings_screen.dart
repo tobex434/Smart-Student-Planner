@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/auth_controller.dart';
 import 'profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -9,7 +11,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // ── hardcoded toggles — ThemeController replaces these in Phase 3 ──
+  //  hardcoded toggles 
   bool _notificationsOn = true;
   bool _darkModeOn = false;
   String _selectedTheme = 'System';
@@ -126,6 +128,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // Account card:
   Widget _buildAccountCard(BuildContext context) {
+    // in _buildAccountCard — read real values
+    final authCtrl = context.watch<AuthController>();
+
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -138,8 +143,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildAccountRow(
             context,
             icon: Icons.person_outline,
-            title: 'Alex Johnson',
-            subtitle: 'Computer Science Major',
+            title: authCtrl.userName.isNotEmpty
+                ? authCtrl.userName
+                : 'Set your name',
+            subtitle: authCtrl.userCourse.isNotEmpty
+                ? authCtrl.userCourse
+                : 'Add your course',
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.push(
               context,
@@ -433,7 +442,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       height: 54,
       child: ElevatedButton.icon(
         onPressed: () {
-          // TODO: AuthController.logout()
+          context.read<AuthController>().logout();
+          // show confirmation snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Logged out'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
         },
         icon: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
         label: Text(
