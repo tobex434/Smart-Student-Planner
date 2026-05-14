@@ -2,9 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'views/screens/main_shell.dart';
+import 'controllers/task_controller.dart';
 
-void main() {
-  runApp(const ScholarSyncApp());
+void main() async {
+  // ensures Flutter is ready before async work
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // load tasks from SQLite before the app renders
+  final taskController = TaskController();
+  await taskController.loadTasks();
+
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider.value(value: taskController)],
+      child: const ScholarSyncApp(),
+    ),
+  );
 }
 
 class ScholarSyncApp extends StatelessWidget {
