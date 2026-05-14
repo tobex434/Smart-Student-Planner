@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smart_student_planner/views/screens/profile_screen.dart';
+import 'new_task_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -179,7 +180,10 @@ class DashboardScreen extends StatelessWidget {
             width: double.infinity,
             height: 54,
             child: ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NewTaskScreen()),
+              ),
               icon: const Icon(Icons.add, color: Colors.white),
               label: const Text(
                 'Add task',
@@ -672,9 +676,10 @@ class DashboardScreen extends StatelessWidget {
   //  FAB: add new task 
   Widget _buildFAB(BuildContext context) {
     return FloatingActionButton(
-      onPressed: () {
-        // TODO: navigate to NewTaskScreen
-      },
+      onPressed: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const NewTaskScreen()),
+      ),
       backgroundColor: Theme.of(context).colorScheme.primary,
       child: const Icon(Icons.add, color: Colors.white),
     );

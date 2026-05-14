@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'new_task_screen.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -163,9 +164,10 @@ class _TasksScreenState extends State<TasksScreen> {
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      // TODO: navigate to NewTaskScreen
-                    },
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const NewTaskScreen()),
+                    ),
                     icon: const Icon(Icons.add, color: Colors.white),
                     label: const Text(
                       'Add task',
@@ -652,9 +654,10 @@ class _TasksScreenState extends State<TasksScreen> {
   //  FAB: add new task 
   Widget _buildFAB(BuildContext context) {
     return FloatingActionButton(
-      onPressed: () {
-        // TODO: navigate to NewTaskScreen
-      },
+      onPressed: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const NewTaskScreen()),
+      ),
       backgroundColor: Theme.of(context).colorScheme.primary,
       child: const Icon(Icons.add, color: Colors.white),
     );
