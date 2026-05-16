@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'task.dart';
+import 'user.dart';
 
 /// This class handles all local SQLite database operations for the app.
 /// It follows the Singleton pattern to ensure only one database connection exists.
@@ -32,6 +33,7 @@ class DatabaseHelper {
 
   /// Runs the first time the app is launched to build the table structure.
   Future<void> _createDB(Database db, int version) async {
+    // tasks table
     await db.execute('''
       CREATE TABLE tasks (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,6 +45,17 @@ class DatabaseHelper {
         reminders   INTEGER NOT NULL DEFAULT 1,
         isComplete  INTEGER NOT NULL DEFAULT 0,
         createdAt   TEXT    NOT NULL
+      )
+    ''');
+
+    // users table
+    await db.execute('''
+      CREATE TABLE users (
+        id       INTEGER PRIMARY KEY AUTOINCREMENT,
+        name     TEXT    NOT NULL,
+        email    TEXT    NOT NULL UNIQUE,
+        password TEXT    NOT NULL,
+        course   TEXT    NOT NULL DEFAULT ''
       )
     ''');
   }
@@ -152,5 +165,51 @@ class DatabaseHelper {
   Future<void> close() async {
     final db = await database;
     await db.close();
+  }
+
+  //
+  // USER METHODS
+  //
+
+  // inserts a new user 
+  Future<int> insertUser(User user) async {
+    final db = await database;
+    return await db.insert(
+      'users',
+      user.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.abort,
+    );
+  }
+
+  // finds a user by email 
+  Future<User?> getUserByEmail(String email) async {
+    final db = await database;
+    final rows = await db.query(
+      'users',
+      where: 'email = ?',
+      whereArgs: [email],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return User.fromMap(rows.first);
+  }
+
+  // checks if any user exists 
+  Future<bool> hasAnyUser() async {
+    final db = await database;
+    final result = await db.rawQuery('SELECT COUNT(*) as count FROM users');
+    final count = Sqflite.firstIntValue(result) ?? 0;
+    return count > 0;
+  }
+
+  //  updates user profile fields
+  Future<int> updateUser(User user) async {
+    final db = await database;
+    return await db.update(
+      'users',
+      user.toMap(),
+      where: 'id = ?',
+      whereArgs: [user.id],
+    );
   }
 }
