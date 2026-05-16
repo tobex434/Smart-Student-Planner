@@ -6,6 +6,7 @@ import 'controllers/auth_controller.dart';
 import 'controllers/timer_controller.dart';
 import 'controllers/theme_controller.dart';
 import 'views/screens/main_shell.dart';
+import 'views/screens/splash_screen.dart';
 
 void main() async {
   // ensures Flutter is ready before async work
@@ -75,7 +76,7 @@ class ScholarSyncApp extends StatelessWidget {
             darkTheme: ThemeData(colorScheme: darkScheme, useMaterial3: true),
 
           // We'll add routes here as we create each screen
-          home: const MainShell(),
+          home: const SplashScreen(),
         );
       },
     );
