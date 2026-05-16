@@ -792,7 +792,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
   }
 }
 
-// Dashed border chip for the add module button 
+// Dashed border chip for the add module button f
 class DashedBorderChip extends StatelessWidget {
   final BuildContext context;
   const DashedBorderChip({super.key, required this.context});
