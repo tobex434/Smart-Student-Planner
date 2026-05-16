@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:provider/provider.dart';
 import 'package:smart_student_planner/views/screens/profile_screen.dart';
+import '../../controllers/timer_controller.dart';
 
 class TimerScreen extends StatefulWidget {
   const TimerScreen({super.key});
@@ -10,15 +12,11 @@ class TimerScreen extends StatefulWidget {
 }
 
 class _TimerScreenState extends State<TimerScreen> {
-  //tswitches between focus and break option  0 = Focus, 1 = Break  TimerController replaces this later
-  int _selectedMode = 0;
-
-  //  hardcoded for now, set up TimerController later
-  final int _totalSeconds = 25 * 60;
-  final int _remainingSeconds = 4 * 60 + 45;
-
   @override
   Widget build(BuildContext context) {
+    // watch — rebuilds every second as timer ticks
+    final timerCtrl = context.watch<TimerController>();
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: _buildAppBar(context),
@@ -42,22 +40,35 @@ class _TimerScreenState extends State<TimerScreen> {
             const SizedBox(height: 20),
 
             // focus | break toggle
-            _buildModeToggle(context),
+            _buildModeToggle(context, timerCtrl),
 
             const SizedBox(height: 40),
 
             // clock dial
-            Center(child: _buildDial(context)),
+            Center(child: _buildDial(context, timerCtrl)),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 16),
 
-            // start button
-            _buildStartButton(context),
+            // session counter
+            Center(
+              child: Text(
+                'Sessions completed: ${timerCtrl.sessionCount}',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // start | pause button — switches based on isRunning
+            _buildStartPauseButton(context, timerCtrl),
 
             const SizedBox(height: 12),
 
-            // rest button
-            _buildRestButton(context),
+            // reset button
+            _buildResetButton(context, timerCtrl),
 
             const SizedBox(height: 28),
 
@@ -140,7 +151,7 @@ class _TimerScreenState extends State<TimerScreen> {
   }
 
   //  Focus | Break segmented toggle
-  Widget _buildModeToggle(BuildContext context) {
+  Widget _buildModeToggle(BuildContext context, TimerController timerCtrl) {
     return Container(
       height: 44,
       decoration: BoxDecoration(
@@ -150,56 +161,67 @@ class _TimerScreenState extends State<TimerScreen> {
       ),
       child: Row(
         children: [
-          // Focus option
-          _buildToggleOption(context, label: 'Focus', index: 0),
-          // Break option
-          _buildToggleOption(context, label: 'Break', index: 1),
+          // focus option
+          Expanded(
+            child: GestureDetector(
+              onTap: () => timerCtrl.setMode(true),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: timerCtrl.isFocusMode
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(26),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  'Focus',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: timerCtrl.isFocusMode
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // break option
+          Expanded(
+            child: GestureDetector(
+              onTap: () => timerCtrl.setMode(false),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: !timerCtrl.isFocusMode
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(26),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  'Break',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: !timerCtrl.isFocusMode
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  // the Single toggle option once selected gets primary pill, unselected is plain
-  Widget _buildToggleOption(
-    BuildContext context, {
-    required String label,
-    required int index,
-  }) {
-    final selected = _selectedMode == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedMode = index),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: selected
-                ? Theme.of(context).colorScheme.primary
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(26),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              // selected text white, unselected uses surface variant colour
-              color: selected
-                  ? Colors.white
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   // Clock dial with tick marks and time display
-  Widget _buildDial(BuildContext context) {
-    // progress = how much time has elapsed
-    final progress = 1 - (_remainingSeconds / _totalSeconds);
-
+  Widget _buildDial(BuildContext context, TimerController timerCtrl) {
     return SizedBox(
       width: 260,
       height: 260,
@@ -210,7 +232,7 @@ class _TimerScreenState extends State<TimerScreen> {
           CustomPaint(
             size: const Size(260, 260),
             painter: _DialPainter(
-              progress: progress,
+              progress: timerCtrl.progress,
               activeColour: Theme.of(context).colorScheme.primary,
               inactiveColour: Theme.of(context).colorScheme.outlineVariant,
             ),
@@ -222,7 +244,7 @@ class _TimerScreenState extends State<TimerScreen> {
             children: [
               // countdown time
               Text(
-                _formatTime(_remainingSeconds),
+                timerCtrl.timeDisplay,
                 style: TextStyle(
                   fontSize: 48,
                   fontWeight: FontWeight.bold,
@@ -246,26 +268,23 @@ class _TimerScreenState extends State<TimerScreen> {
     );
   }
 
-  //  conversts seconds into MM:SS string format for display in the centre of the clock dial
-  String _formatTime(int seconds) {
-    final m = (seconds ~/ 60).toString().padLeft(2, '0');
-    final s = (seconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
-
-  // Start button full width primary pill
-  Widget _buildStartButton(BuildContext context) {
+  // start/pause button — switches label based on isRunning
+  Widget _buildStartPauseButton(
+    BuildContext context,
+    TimerController timerCtrl,
+  ) {
     return SizedBox(
       width: double.infinity,
       height: 54,
       child: ElevatedButton.icon(
-        onPressed: () {
-          // TODO: timerController.start()
-        },
-        icon: const Icon(Icons.play_arrow, color: Colors.white),
-        label: const Text(
-          'Start',
-          style: TextStyle(
+        onPressed: timerCtrl.isRunning ? timerCtrl.pause : timerCtrl.start,
+        icon: Icon(
+          timerCtrl.isRunning ? Icons.pause : Icons.play_arrow,
+          color: Colors.white,
+        ),
+        label: Text(
+          timerCtrl.isRunning ? 'Pause' : 'Start',
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -282,21 +301,19 @@ class _TimerScreenState extends State<TimerScreen> {
     );
   }
 
-  // Rest button full width light grey pill
-  Widget _buildRestButton(BuildContext context) {
+  // reset button
+  Widget _buildResetButton(BuildContext context, TimerController timerCtrl) {
     return SizedBox(
       width: double.infinity,
       height: 54,
       child: ElevatedButton.icon(
-        onPressed: () {
-          // TODO: timerController.reset()
-        },
+        onPressed: timerCtrl.reset,
         icon: Icon(
           Icons.restart_alt,
           color: Theme.of(context).colorScheme.primary,
         ),
         label: Text(
-          'Rest',
+          'Reset',
           style: TextStyle(
             color: Theme.of(context).colorScheme.primary,
             fontSize: 16,
