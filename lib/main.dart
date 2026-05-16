@@ -4,19 +4,22 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'controllers/task_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/timer_controller.dart';
+import 'controllers/theme_controller.dart';
 import 'views/screens/main_shell.dart';
 
 void main() async {
   // ensures Flutter is ready before async work
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ── load both controllers before app renders ──
+  // ── load all controllers before app renders ──
   final taskController = TaskController();
   final authController = AuthController();
   final timerController = TimerController();
+  final themeController = ThemeController();
   await taskController.loadTasks();
   await authController.loadFromPrefs();
   await timerController.loadFromPrefs();
+  await themeController.loadFromPrefs();
 
   runApp(
     MultiProvider(
@@ -24,6 +27,7 @@ void main() async {
         ChangeNotifierProvider.value(value: taskController),
         ChangeNotifierProvider.value(value: authController),
         ChangeNotifierProvider.value(value: timerController),
+        ChangeNotifierProvider.value(value: themeController),
       ],
       child: const ScholarSyncApp(),
     ),
@@ -32,45 +36,43 @@ void main() async {
 
 class ScholarSyncApp extends StatelessWidget {
   const ScholarSyncApp({super.key});
-  // This is the app's default color, it serves as a fallback if obtaininig wallpaper color fails
-  static const Color _seedColour = Color(0xFF1565C0);
+  static const Color _fallbackSeed = Color(0xFF1565C0);
 
   @override
   Widget build(BuildContext context) {
-    // the dynamic color wrapper widgets grabs the os wallpaper colors
+    // ── watch ThemeController — whole app rebuilds on theme change ──
+    final themeCtrl = context.watch<ThemeController>();
+
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        // Build light scheme
-        // this checks If the phone supports dynamic colour, use it — otherwise use our default color we initailised earlier
-        final lightScheme =
-            lightDynamic ??
-            ColorScheme.fromSeed(
-              seedColor: _seedColour,
-              brightness: Brightness.light,
-            );
+        ColorScheme lightScheme;
+        ColorScheme darkScheme;
 
-        // Build dark scheme
-        final darkScheme =
-            darkDynamic ??
-            ColorScheme.fromSeed(
-              seedColor: _seedColour,
-              brightness: Brightness.dark,
-            );
+        if (themeCtrl.useDynamicColour && lightDynamic != null) {
+          // Android 12+ wallpaper colours
+          lightScheme = lightDynamic.harmonized();
+          darkScheme = darkDynamic!.harmonized();
+        } else {
+          // fallback to seed colour
+          lightScheme = ColorScheme.fromSeed(
+            seedColor: themeCtrl.seedColour,
+            brightness: Brightness.light,
+          );
+          darkScheme = ColorScheme.fromSeed(
+            seedColor: themeCtrl.seedColour,
+            brightness: Brightness.dark,
+          );
+        }
 
         return MaterialApp(
           // materialapp is the main entry point of the app, we'll be adding navigation, themes.
           title: 'ScholarSync',
           debugShowCheckedModeBanner:
               false, // removes the debug banner top right
-          // Light theme
-          theme: ThemeData(colorScheme: lightScheme, useMaterial3: true),
-
-          // Dark theme
-          darkTheme: ThemeData(colorScheme: darkScheme, useMaterial3: true),
-
-          // Follows the phone's system setting for now
-          // User will be able to override this from Profile screen later
-          themeMode: ThemeMode.system,
+            // reads from controller — not hardcoded anymore
+            themeMode: themeCtrl.themeMode,
+            theme: ThemeData(colorScheme: lightScheme, useMaterial3: true),
+            darkTheme: ThemeData(colorScheme: darkScheme, useMaterial3: true),
 
           // We'll add routes here as we create each screen
           home: const MainShell(),

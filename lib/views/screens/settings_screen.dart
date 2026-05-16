@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/auth_controller.dart';
+import '../../controllers/theme_controller.dart';
 import 'profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -11,13 +12,14 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  //  hardcoded toggles 
+  // local notifications toggle
   bool _notificationsOn = true;
-  bool _darkModeOn = false;
-  String _selectedTheme = 'System';
 
   @override
   Widget build(BuildContext context) {
+    final themeCtrl = context.watch<ThemeController>();
+    final authCtrl = context.watch<AuthController>();
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: _buildAppBar(context),
@@ -31,14 +33,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // account section
             _buildSectionLabel(context, 'Account'),
             const SizedBox(height: 10),
-            _buildAccountCard(context),
+            _buildAccountCard(context, authCtrl),
 
             const SizedBox(height: 24),
 
             // preferences section
             _buildSectionLabel(context, 'Preferences'),
             const SizedBox(height: 10),
-            _buildPreferencesCard(context),
+            _buildPreferencesCard(context, themeCtrl),
 
             const SizedBox(height: 24),
 
@@ -50,14 +52,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 32),
 
             // log out button
-            _buildLogOutButton(context),
+            _buildLogOutButton(context, authCtrl),
 
             const SizedBox(height: 16),
 
             // app version
             Center(
               child: Text(
-                'Student Planner v1.0.0',
+                'ScholarSync v1.0.0',
                 style: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -127,10 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // Account card:
-  Widget _buildAccountCard(BuildContext context) {
-    // in _buildAccountCard — read real values
-    final authCtrl = context.watch<AuthController>();
-
+  Widget _buildAccountCard(BuildContext context, AuthController authCtrl) {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -232,7 +231,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   //  Preferences card:
-  Widget _buildPreferencesCard(BuildContext context) {
+  Widget _buildPreferencesCard(
+    BuildContext context,
+    ThemeController themeCtrl,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -264,8 +266,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.dark_mode_outlined,
             title: 'Dark Mode',
             subtitle: null,
-            value: _darkModeOn,
-            onChanged: (val) => setState(() => _darkModeOn = val),
+            value: themeCtrl.themeMode == ThemeMode.dark,
+            onChanged: (val) => themeCtrl.setThemeMode(
+              val ? ThemeMode.dark : ThemeMode.light,
+            ),
           ),
 
           Divider(
@@ -276,7 +280,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           // app theme dropdown
-          _buildThemeRow(context),
+          _buildThemeRow(context, themeCtrl),
         ],
       ),
     );
@@ -336,7 +340,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // App theme row
-  Widget _buildThemeRow(BuildContext context) {
+  Widget _buildThemeRow(BuildContext context, ThemeController themeCtrl) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -361,7 +365,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           // dropdown
           DropdownButton<String>(
-            value: _selectedTheme,
+            value: themeCtrl.themeModeLabel,
             underline: const SizedBox(),
             style: TextStyle(
               fontSize: 13,
@@ -371,8 +375,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               return DropdownMenuItem(value: theme, child: Text(theme));
             }).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _selectedTheme = val);
-              // TODO: ThemeController.setThemeMode()
+              if (val != null) themeCtrl.setThemeModeFromString(val);
             },
           ),
         ],
@@ -436,13 +439,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // Log out button
-  Widget _buildLogOutButton(BuildContext context) {
+  Widget _buildLogOutButton(BuildContext context, AuthController authCtrl) {
     return SizedBox(
       width: double.infinity,
       height: 54,
       child: ElevatedButton.icon(
         onPressed: () {
-          context.read<AuthController>().logout();
+          authCtrl.logout();
           // show confirmation snackbar
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
