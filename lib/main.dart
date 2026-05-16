@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'controllers/task_controller.dart';
 import 'controllers/auth_controller.dart';
+import 'controllers/timer_controller.dart';
 import 'views/screens/main_shell.dart';
 
 void main() async {
@@ -12,14 +13,17 @@ void main() async {
   // ── load both controllers before app renders ──
   final taskController = TaskController();
   final authController = AuthController();
+  final timerController = TimerController();
   await taskController.loadTasks();
   await authController.loadFromPrefs();
+  await timerController.loadFromPrefs();
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: taskController),
         ChangeNotifierProvider.value(value: authController),
+        ChangeNotifierProvider.value(value: timerController),
       ],
       child: const ScholarSyncApp(),
     ),
