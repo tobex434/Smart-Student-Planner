@@ -190,7 +190,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
           // save text button
           GestureDetector(
             onTap: () {
-              if (_titleController.text.trim().isEmpty) return;
+              if (!_validateTaskInput()) return;
               final taskCtrl = context.read<TaskController>();
 
               if (widget.existingTask != null) {
@@ -721,7 +721,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
           height: 48,
           child: ElevatedButton(
             onPressed: () {
-              if (_titleController.text.trim().isEmpty) return;
+              if (!_validateTaskInput()) return;
               final taskCtrl = context.read<TaskController>();
 
               if (widget.existingTask != null) {
@@ -781,6 +781,31 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  bool _validateTaskInput() {
+    if (_titleController.text.trim().isEmpty) {
+      _showError('Please enter a task title');
+      return false;
+    }
+    if (_modules.isEmpty) {
+      _showError('Please add at least one module');
+      return false;
+    }
+    return true;
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
     );
   }
 
