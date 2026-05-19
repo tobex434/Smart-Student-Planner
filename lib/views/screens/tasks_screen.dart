@@ -45,9 +45,12 @@ class _TasksScreenState extends State<TasksScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: _buildAppBar(context),
-      body: tasks.isEmpty
-          ? _buildEmptyState(context, taskCtrl)
-          : _buildActiveState(context, taskCtrl, tasks),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 350),
+        child: tasks.isEmpty
+            ? _buildEmptyState(context, taskCtrl)
+            : _buildActiveState(context, taskCtrl, tasks),
+      ),
       floatingActionButton: _buildFAB(context),
     );
   }
@@ -430,6 +433,40 @@ class _TasksScreenState extends State<TasksScreen> {
         ),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Delete task?'),
+                content: Text(
+                  'Are you sure you want to delete "${task.title}"? '
+                  'This cannot be undone.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: Text(
+                      'Delete',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ) ??
+            false;
+      },
       onDismissed: (_) => taskCtrl.deleteTask(task.id!),
       child: GestureDetector(
         // tap to edit
