@@ -1,6 +1,7 @@
 // creating a Task class to represent the data structure of a task in the app
 class Task {
   final int? id;
+  final int userId;
   final String title;
   final String description;
   final String priority;
@@ -12,6 +13,7 @@ class Task {
 
   Task({
     this.id,
+    required this.userId,
     required this.title,
     required this.description,
     required this.priority,
@@ -26,6 +28,7 @@ class Task {
   Map<String, dynamic> toMap() {
     return {
       'id':          id,
+      'userId':      userId,
       'title':       title,
       'description': description,
       'priority':    priority,
@@ -43,6 +46,7 @@ class Task {
   factory Task.fromMap(Map<String, dynamic> map) {
     return Task(
       id:          map['id'] as int?,
+      userId:      map['userId'] as int,
       title:       map['title'] as String,
       description: map['description'] as String,
       priority:    map['priority'] as String,
@@ -65,6 +69,7 @@ class Task {
   // used by the controller when editing a task
   Task copyWith({
     int? id,
+    int? userId,
     String? title,
     String? description,
     String? priority,
@@ -76,6 +81,7 @@ class Task {
   }) {
     return Task(
       id:          id          ?? this.id,
+      userId:      userId      ?? this.userId,
       title:       title       ?? this.title,
       description: description ?? this.description,
       priority:    priority    ?? this.priority,
