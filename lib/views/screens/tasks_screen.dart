@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import '../../controllers/auth_controller.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/task.dart';
 import 'new_task_screen.dart';
@@ -24,9 +25,11 @@ class _TasksScreenState extends State<TasksScreen> {
   @override
   void initState() {
     super.initState();
-    // load all tasks when screen first opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TaskController>().loadTasks();
+      final userId = context.read<AuthController>().userId;
+      if (userId != null) {
+        context.read<TaskController>().loadTasksForUser(userId);
+      }
     });
   }
 
@@ -138,7 +141,7 @@ class _TasksScreenState extends State<TasksScreen> {
               children: [
                 // SVG illustration
                 SvgPicture.asset(
-                  'lib/assets/images/tasks-hero.svg',
+                  'lib/assets/images/task-hero.svg',
                   width: 189,
                   height: 189,
                   colorFilter: ColorFilter.mode(
