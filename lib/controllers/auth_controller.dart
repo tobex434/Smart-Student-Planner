@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/database_helper.dart';
 import '../models/user.dart';
+import 'task_controller.dart';
 
 class AuthController extends ChangeNotifier {
   // ── private fields ──
@@ -10,6 +11,7 @@ class AuthController extends ChangeNotifier {
   String _userCourse = '';
   int? _userId;
   bool _isLoggedIn = false;
+  TaskController? _taskController;
 
   // ── public getters ──
   String get userName => _userName;
@@ -18,7 +20,10 @@ class AuthController extends ChangeNotifier {
   int? get userId => _userId;
   bool get isLoggedIn => _isLoggedIn;
 
-  // ── called once in main.dart ──
+  void setTaskController(TaskController taskController) {
+    _taskController = taskController;
+  }
+
   Future<void> loadFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     _isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
@@ -26,6 +31,11 @@ class AuthController extends ChangeNotifier {
     _userEmail = prefs.getString('userEmail') ?? '';
     _userCourse = prefs.getString('userCourse') ?? '';
     _userId = prefs.getInt('userId');
+
+    if (_isLoggedIn && _userId != null) {
+      await _taskController?.loadTasksForUser(_userId!);
+    }
+
     notifyListeners();
   }
 
@@ -59,7 +69,7 @@ class AuthController extends ChangeNotifier {
     final user = User(
       name: name.trim(),
       email: email.trim().toLowerCase(),
-      password: password, // TODO: hash in future
+      password: password,
       course: course.trim(),
     );
 
@@ -146,6 +156,8 @@ class AuthController extends ChangeNotifier {
   //
 
   Future<void> logout() async {
+    _taskController?.clearTasks();
+
     _userName = '';
     _userEmail = '';
     _userCourse = '';
@@ -184,6 +196,8 @@ class AuthController extends ChangeNotifier {
     await prefs.setString('userEmail', email);
     await prefs.setString('userCourse', course);
     await prefs.setBool('isLoggedIn', true);
+
+    await _taskController?.loadTasksForUser(id);
 
     notifyListeners();
   }
