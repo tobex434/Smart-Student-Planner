@@ -37,6 +37,7 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE tasks (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        userId      INTEGER NOT NULL,
         title       TEXT    NOT NULL,
         description TEXT    NOT NULL,
         priority    TEXT    NOT NULL,
@@ -75,14 +76,19 @@ class DatabaseHelper {
   // READ OPERATIONS
 
   /// Fetches every task from the table and converts the raw data back into Task objects.
-  Future<List<Task>> getAllTasks() async {
+  Future<List<Task>> getAllTasks(int userId) async {
     final db = await database;
-    final rows = await db.query('tasks', orderBy: 'createdAt DESC');
+    final rows = await db.query(
+      'tasks',
+      where: 'userId = ?',
+      whereArgs: [userId],
+      orderBy: 'createdAt DESC',
+    );
     return rows.map((row) => Task.fromMap(row)).toList();
   }
 
   /// Filters for incomplete tasks where the deadline matches today's date.
-  Future<List<Task>> getTasksDueToday() async {
+  Future<List<Task>> getTasksDueToday(int userId) async {
     final db = await database;
     final today = DateTime.now();
     final datePrefix =
@@ -90,31 +96,32 @@ class DatabaseHelper {
 
     final rows = await db.query(
       'tasks',
-      where: 'deadline LIKE ? AND isComplete = 0',
-      whereArgs: ['$datePrefix%'],
+      where: 'userId = ? AND deadline LIKE ? AND isComplete = 0',
+      whereArgs: [userId, '$datePrefix%'],
       orderBy: 'deadline ASC',
     );
     return rows.map((row) => Task.fromMap(row)).toList();
   }
 
   // returns only completed tasks
-  Future<List<Task>> getCompletedTasks() async {
+  Future<List<Task>> getCompletedTasks(int userId) async {
     final db = await database;
     final rows = await db.query(
       'tasks',
-      where: 'isComplete = 1',
+      where: 'userId = ? AND isComplete = 1',
+      whereArgs: [userId],
       orderBy: 'createdAt DESC',
     );
     return rows.map((row) => Task.fromMap(row)).toList();
   }
 
   /// Searches for tasks by checking if the title or description contains the search term.
-  Future<List<Task>> searchTasks(String keyword) async {
+  Future<List<Task>> searchTasks(int userId, String keyword) async {
     final db = await database;
     final rows = await db.query(
       'tasks',
-      where: 'title LIKE ? OR description LIKE ?',
-      whereArgs: ['%$keyword%', '%$keyword%'],
+      where: 'userId = ? AND (title LIKE ? OR description LIKE ?)',
+      whereArgs: [userId, '%$keyword%', '%$keyword%'],
       orderBy: 'createdAt DESC',
     );
     return rows.map((row) => Task.fromMap(row)).toList();
@@ -155,9 +162,21 @@ class DatabaseHelper {
   // ANALYTICS AND UTILITIES
 
   /// Returns the total count of all tasks for use in dashboard widgets.
-  Future<int> getTaskCount() async {
+  Future<int> getTaskCount(int userId) async {
     final db = await database;
-    final result = await db.rawQuery('SELECT COUNT(*) as count FROM tasks');
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM tasks WHERE userId = ?',
+      [userId],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<int> getCompletedCount(int userId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM tasks WHERE userId = ? AND isComplete = 1',
+      [userId],
+    );
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
