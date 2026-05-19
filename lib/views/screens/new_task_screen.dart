@@ -396,8 +396,9 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                   final now = DateTime.now();
                   final picked = await showDatePicker(
                     context: context,
-                    initialDate:
-                        _selectedDate.isBefore(now) ? now : _selectedDate,
+                    initialDate: _selectedDate.isBefore(now)
+                        ? now
+                        : _selectedDate,
                     firstDate: now,
                     lastDate: DateTime(2030),
                   );
