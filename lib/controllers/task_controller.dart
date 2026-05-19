@@ -11,6 +11,7 @@ class TaskController extends ChangeNotifier {
 
   // current filter: 'all', 'today', 'completed'
   String _filter = 'all';
+  int _userId = 0;
 
   // public getters screens read these, never _tasks directly
   List<Task> get tasks => _tasks;
@@ -33,13 +34,20 @@ class TaskController extends ChangeNotifier {
     }).length;
   }
 
-  // called once when the app starts loads all tasks from SQLite
-  Future<void> loadTasks() async {
-    _tasks = await DatabaseHelper.instance.getAllTasks();
+  Future<void> loadTasksForUser(int userId) async {
+    _userId = userId;
+    _filter = 'all';
+    _tasks = await DatabaseHelper.instance.getAllTasks(userId);
     notifyListeners();
   }
 
-  // CREATE
+  void clearTasks() {
+    _tasks = [];
+    _userId = 0;
+    _filter = 'all';
+    _searchQuery = '';
+    notifyListeners();
+  }
 
   Future<void> addTask({
     required String title,
@@ -51,6 +59,7 @@ class TaskController extends ChangeNotifier {
   }) async {
     // build the Task object
     final task = Task(
+      userId: _userId,
       title: title,
       description: description,
       priority: priority,
@@ -82,9 +91,9 @@ class TaskController extends ChangeNotifier {
     required bool isComplete,
     required DateTime createdAt,
   }) async {
-    final updatedTask = Task(
-      // same id SQLite finds the right row to overwrite
+    final task = Task(
       id: id,
+      userId: _userId,
       title: title,
       description: description,
       priority: priority,
@@ -95,8 +104,7 @@ class TaskController extends ChangeNotifier {
       // keep original createdAt do not reset it on edit
       createdAt: createdAt,
     );
-
-    await DatabaseHelper.instance.updateTask(updatedTask);
+    await DatabaseHelper.instance.updateTask(task);
     await _reload();
   }
 
@@ -118,13 +126,11 @@ class TaskController extends ChangeNotifier {
   // called every time the user types in the search bar
   Future<void> setSearch(String keyword) async {
     _searchQuery = keyword;
-
     if (keyword.trim().isEmpty) {
       // empty search load everything
       await _reload();
     } else {
-      // search SQLite for matching tasks
-      _tasks = await DatabaseHelper.instance.searchTasks(keyword);
+      _tasks = await DatabaseHelper.instance.searchTasks(_userId, keyword);
       notifyListeners();
     }
   }
@@ -143,14 +149,14 @@ class TaskController extends ChangeNotifier {
 
     switch (filter) {
       case 'today':
-        _tasks = await DatabaseHelper.instance.getTasksDueToday();
+        _tasks = await DatabaseHelper.instance.getTasksDueToday(_userId);
         break;
       case 'completed':
-        _tasks = await DatabaseHelper.instance.getCompletedTasks();
+        _tasks = await DatabaseHelper.instance.getCompletedTasks(_userId);
         break;
       case 'all':
       default:
-        _tasks = await DatabaseHelper.instance.getAllTasks();
+        _tasks = await DatabaseHelper.instance.getAllTasks(_userId);
         break;
     }
 
