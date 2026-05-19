@@ -177,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             context,
             icon: Icons.email_outlined,
             title: 'Email',
-            subtitle: 'alex.j@university.edu',
+            subtitle: authCtrl.userEmail,
             trailing: Icon(
               Icons.edit_outlined,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
