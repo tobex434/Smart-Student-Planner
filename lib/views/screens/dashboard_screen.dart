@@ -23,10 +23,12 @@ class DashboardScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: _buildAppBar(context),
-      // if statement replaces the hardcoded _hasTasks bool
-      body: tasks.isEmpty
-          ? _buildEmptyState(context, name)
-          : _buildActiveState(context, taskCtrl, name),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 350),
+        child: tasks.isEmpty
+            ? _buildEmptyState(context, name)
+            : _buildActiveState(context, taskCtrl, name),
+      ),
       floatingActionButton: tasks.isEmpty ? null : _buildFAB(context),
     );
   }
@@ -238,6 +240,11 @@ class DashboardScreen extends StatelessWidget {
         .where((t) => t.priority == 'High' && !t.isComplete)
         .toList();
 
+    final smallTasks = taskCtrl.tasks
+      .where((t) => t.priority != 'High' && !t.isComplete)
+      .take(2)
+      .toList();
+
     final upcoming = taskCtrl.tasks
         .where(
           (t) =>
@@ -305,6 +312,30 @@ class DashboardScreen extends StatelessWidget {
               : _buildUrgentTaskCard(context, highPriority.first),
 
           const SizedBox(height: 24),
+
+          // if (smallTasks.isNotEmpty)
+          //   Row(
+          //     children: smallTasks.asMap().entries.map((entry) {
+          //       final t = entry.value;
+          //       return Expanded(
+          //         child: Padding(
+          //           padding: EdgeInsets.only(
+          //             right: entry.key == 0 && smallTasks.length > 1 ? 12 : 0,
+          //           ),
+          //           child: _buildSmallTaskCard(
+          //             context,
+          //             icon: Icons.book_outlined,
+          //             iconBg: Theme.of(context).colorScheme.primaryContainer,
+          //             iconColor: Theme.of(context).colorScheme.primary,
+          //             title: t.title,
+          //             subtitle: t.description,
+          //           ),
+          //         ),
+          //       );
+          //     }).toList(),
+          //   ),
+
+          // if (smallTasks.isNotEmpty) const SizedBox(height: 24),
 
           _buildSectionHeader(context, 'Upcoming tasks'),
 

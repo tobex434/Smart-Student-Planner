@@ -10,18 +10,21 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  late TextEditingController _nameController;
-  late TextEditingController _emailController;
-  late TextEditingController _courseController;
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _courseController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    // pre-fill from saved prefs
-    final authCtrl = context.read<AuthController>();
-    _nameController = TextEditingController(text: authCtrl.userName);
-    _emailController = TextEditingController(text: authCtrl.userEmail);
-    _courseController = TextEditingController(text: authCtrl.userCourse);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authCtrl = context.read<AuthController>();
+      setState(() {
+        _nameController.text = authCtrl.userName;
+        _emailController.text = authCtrl.userEmail;
+        _courseController.text = authCtrl.userCourse;
+      });
+    });
   }
 
   @override
