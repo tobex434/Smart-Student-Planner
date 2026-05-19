@@ -393,11 +393,12 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
               // deadline pill
               GestureDetector(
                 onTap: () async {
-                  // date picker
+                  final now = DateTime.now();
                   final picked = await showDatePicker(
                     context: context,
-                    initialDate: _selectedDate,
-                    firstDate: DateTime.now(),
+                    initialDate:
+                        _selectedDate.isBefore(now) ? now : _selectedDate,
+                    firstDate: now,
                     lastDate: DateTime(2030),
                   );
                   if (picked != null) {
