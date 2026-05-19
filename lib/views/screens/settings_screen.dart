@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/theme_controller.dart';
+import 'landing_screen.dart';
 import 'profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -453,18 +454,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       width: double.infinity,
       height: 54,
       child: ElevatedButton.icon(
-        onPressed: () {
-          authCtrl.logout();
-          // show confirmation snackbar
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Logged out'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+        onPressed: () async {
+          await authCtrl.logout();
+
+          if (!mounted) return;
+
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const LandingScreen()),
+            (route) => false,
           );
         },
         icon: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
