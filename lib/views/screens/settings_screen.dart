@@ -80,21 +80,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       elevation: 0,
       scrolledUnderElevation: 0,
-      // back arrow + Settings title
-      leading: IconButton(
-        icon: Icon(
-          Icons.arrow_back,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        onPressed: () => Navigator.pop(context),
-      ),
-      title: Text(
-        'Settings',
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.bold,
-          fontSize: 20,
-        ),
+      automaticallyImplyLeading: false,
+      title: Row(
+        children: [
+          // brand logo
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Icon(Icons.bookmark, color: Colors.white, size: 16),
+          ),
+          const SizedBox(width: 8),
+          // app name
+          Text(
+            'ScholarSync',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+        ],
       ),
       actions: [
         // search icon
