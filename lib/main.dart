@@ -17,7 +17,9 @@ void main() async {
   final authController = AuthController();
   final timerController = TimerController();
   final themeController = ThemeController();
-  await taskController.loadTasks();
+
+  authController.setTaskController(taskController);
+
   await authController.loadFromPrefs();
   await timerController.loadFromPrefs();
   await themeController.loadFromPrefs();
@@ -70,10 +72,10 @@ class ScholarSyncApp extends StatelessWidget {
           title: 'ScholarSync',
           debugShowCheckedModeBanner:
               false, // removes the debug banner top right
-            // reads from controller — not hardcoded anymore
-            themeMode: themeCtrl.themeMode,
-            theme: ThemeData(colorScheme: lightScheme, useMaterial3: true),
-            darkTheme: ThemeData(colorScheme: darkScheme, useMaterial3: true),
+          // reads from controller — not hardcoded anymore
+          themeMode: themeCtrl.themeMode,
+          theme: ThemeData(colorScheme: lightScheme, useMaterial3: true),
+          darkTheme: ThemeData(colorScheme: darkScheme, useMaterial3: true),
 
           // We'll add routes here as we create each screen
           home: const SplashScreen(),
