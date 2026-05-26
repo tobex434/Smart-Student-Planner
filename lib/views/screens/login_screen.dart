@@ -96,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'ScholarSync',
+                    'SmartStudentPlanner',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.bold,

@@ -34,7 +34,7 @@ class LandingScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   const Text(
-                    'ScholarSync',
+                    'SmartStudentPlanner',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 28,

@@ -66,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
             // app name
             const Text(
-              'ScholarSync',
+              'SmartStudentPlanner',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 28,

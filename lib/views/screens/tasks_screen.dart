@@ -79,7 +79,7 @@ class _TasksScreenState extends State<TasksScreen> {
           const SizedBox(width: 8),
           // app name
           Text(
-            'ScholarSync',
+            'SmartStudentPlanner',
             style: TextStyle(
               color: Theme.of(context).colorScheme.primary,
               fontWeight: FontWeight.bold,

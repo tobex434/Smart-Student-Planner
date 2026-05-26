@@ -60,7 +60,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // app version
             Center(
               child: Text(
-                'ScholarSync v1.0.0',
+                'SmartStudentPlanner v1.0.0',
                 style: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -97,7 +97,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(width: 8),
           // app name
           Text(
-            'ScholarSync',
+            'SmartStudentPlanner',
             style: TextStyle(
               color: Theme.of(context).colorScheme.primary,
               fontWeight: FontWeight.bold,

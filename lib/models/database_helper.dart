@@ -19,7 +19,7 @@ class DatabaseHelper {
   /// If the database isn't open yet, it triggers the initialization.
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('scholarsync.db');
+    _database = await _initDB('smartstudentplanner.db');
     return _database!;
   }
 

@@ -247,7 +247,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'ScholarSync',
+                      'SmartStudentPlanner',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,

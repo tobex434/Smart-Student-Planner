@@ -32,13 +32,13 @@ void main() async {
         ChangeNotifierProvider.value(value: timerController),
         ChangeNotifierProvider.value(value: themeController),
       ],
-      child: const ScholarSyncApp(),
+      child: const SmartStudentPlannerApp(),
     ),
   );
 }
 
-class ScholarSyncApp extends StatelessWidget {
-  const ScholarSyncApp({super.key});
+class SmartStudentPlannerApp extends StatelessWidget {
+  const SmartStudentPlannerApp({super.key});
   static const Color _fallbackSeed = Color(0xFF1565C0);
 
   @override
@@ -69,7 +69,7 @@ class ScholarSyncApp extends StatelessWidget {
 
         return MaterialApp(
           // materialapp is the main entry point of the app, we'll be adding navigation, themes.
-          title: 'ScholarSync',
+          title: 'SmartStudentPlanner',
           debugShowCheckedModeBanner:
               false, // removes the debug banner top right
           // reads from controller — not hardcoded anymore
